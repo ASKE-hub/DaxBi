@@ -1,0 +1,6 @@
+-r requirements.txt
+seaborn==0.13.2
+jupyterlab==4.4.7
+ipykernel==6.31.0
+nbformat==5.10.4
+nbconvert==7.16.6
