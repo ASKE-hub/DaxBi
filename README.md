@@ -1,12 +1,16 @@
-# Subscription Churn Analysis
+# DaxBi | Subscription Churn Analysis
 
-### Understanding cancellation patterns with Python and Power BI
+### Understanding cancellation patterns with Python, DAX, and Power BI
+
+[![Portfolio checks](https://github.com/ASKE-hub/DaxBi/actions/workflows/portfolio-checks.yml/badge.svg)](https://github.com/ASKE-hub/DaxBi/actions/workflows/portfolio-checks.yml)
 
 **Abubkr Sami** · Data analyst portfolio · [GitHub](https://github.com/ASKE-hub)
 
 An analysis of **2,400 subscriptions** that connects data quality checks, customer segmentation, statistical testing, and an interpretable churn model with an Arabic Power BI dashboard. The goal is to identify retention priorities and communicate what the evidence can support.
 
 [Explore the notebook](notebooks/subscriptionChurn.ipynb) · [Read the Arabic report](reports/Subscription_Churn_Analysis_Report_AR.pdf) · [Download the Power BI file](powerbi/SubscriptionChurn.pbix) · [Run the Python analysis](src/Subscription_Churn_Analysis_Code.py)
+
+[Review the DAX source](powerbi/dax/churn-analysis.dax) · [Use the DAX query pack](docs/DAX_GUIDE.md)
 
 ![Summary of observed subscription churn rates](reports/results/churn_overview.png)
 
@@ -23,7 +27,7 @@ An analysis of **2,400 subscriptions** that connects data quality checks, custom
 | Source columns | 12 |
 | Missing values / duplicate rows | 0 / 0 |
 
-**Tools:** Python, pandas, NumPy, SciPy, statsmodels, scikit-learn, Matplotlib, Seaborn, Jupyter, and Power BI.
+**Tools:** Python, pandas, NumPy, SciPy, statsmodels, scikit-learn, Matplotlib, Seaborn, Jupyter, Power BI, and DAX.
 
 ## Business questions
 
@@ -101,6 +105,12 @@ The supplied [Power BI report](powerbi/SubscriptionChurn.pbix) contains:
 
 See the [Power BI guide](docs/POWER_BI.md) for refresh instructions and a suggested review path. The `.pbix` is preserved as supplied; opening and refreshing it requires Power BI Desktop. Its embedded model contains subscriber-level records.
 
+## DAX source and segment comparisons
+
+The [DAX query pack](powerbi/dax/churn-analysis.dax) adds nine readable measure definitions for subscriber counts, churn and retention rates, support demand, engagement, and plan comparisons. It includes four result sets and 20 checks to run against the original model in Power BI Desktop.
+
+The [DAX guide](docs/DAX_GUIDE.md) explains filter context, blank rates for empty selections, weighted totals, and percentage-point differences. These are new source examples; native Power BI execution remains pending and the supplied PBIX is unchanged.
+
 ## Run the project
 
 ### 1. Install dependencies
@@ -165,7 +175,9 @@ DaxBi/
 ├── requirements-notebook.txt
 ├── src/Subscription_Churn_Analysis_Code.py
 ├── notebooks/subscriptionChurn.ipynb
-├── powerbi/SubscriptionChurn.pbix
+├── powerbi/
+│   ├── SubscriptionChurn.pbix
+│   └── dax/churn-analysis.dax      # Measures, comparisons, and baseline checks
 ├── reports/
 │   ├── Subscription_Churn_Analysis_Report_AR.pdf
 │   └── results/                   # Aggregate tables, metrics, and visual
@@ -173,9 +185,21 @@ DaxBi/
 ├── docs/
 │   ├── DATA_DICTIONARY.md
 │   ├── POWER_BI.md
+│   ├── DAX_GUIDE.md
 │   └── VALIDATION.md
+├── scripts/validate_portfolio.py
+├── .github/workflows/portfolio-checks.yml
 └── tests/test_analysis.py
 ```
+
+## Automated checks
+
+```bash
+python -m unittest discover -s tests -v
+python scripts/validate_portfolio.py
+```
+
+GitHub Actions runs the synthetic-data tests and checks the committed aggregate results, local documentation links, and DAX field references on pushes to `main` and pull requests. These checks need no source CSV and do not execute Power BI or DAX. Native query validation is described in the [DAX guide](docs/DAX_GUIDE.md).
 
 ## Limitations and next steps
 

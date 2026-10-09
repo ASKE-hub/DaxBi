@@ -20,6 +20,10 @@ Open [SubscriptionChurn.pbix](../powerbi/SubscriptionChurn.pbix) with Power BI D
 
 The exact placement of source settings can vary with Power BI Desktop version. Review the current query before editing it rather than creating a second table with a different name.
 
+## DAX query pack
+
+The [DAX guide](DAX_GUIDE.md) introduces nine new measures, plan comparisons, and 20 checks in [churn-analysis.dax](../powerbi/dax/churn-analysis.dax). Run that complete file in DAX query view to inspect the calculations before adding measures to a working copy. It includes explicit filter-context examples and handles empty selections with blank rates. The original PBIX has not been changed to include these measures.
+
 ## Suggested measure definitions
 
 The report definition references the following measure names. These are equivalent suggested definitions for a model with one row per subscriber; they were not extracted from the binary semantic model and should not be treated as a verbatim export of its existing DAX. Add each measure separately if rebuilding the report.

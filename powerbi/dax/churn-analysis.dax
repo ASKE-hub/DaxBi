@@ -1,0 +1,136 @@
+// DaxBi: query-scoped measures for the supplied subscription model.
+// Run the complete file in Power BI Desktop's DAX query view.
+// Definitions are new examples, not an export of the PBIX's existing measures.
+// Baseline checks target the original 2,400-row sample. See docs/DAX_GUIDE.md.
+
+DEFINE
+    MEASURE 'subscriptions_churn_clean'[DaxBi Subscribers] =
+        COALESCE(COUNTROWS('subscriptions_churn_clean'), 0)
+
+    MEASURE 'subscriptions_churn_clean'[DaxBi Churned] =
+        CALCULATE(
+            [DaxBi Subscribers],
+            KEEPFILTERS('subscriptions_churn_clean'[ألغى الاشتراك] = 1)
+        )
+
+    MEASURE 'subscriptions_churn_clean'[DaxBi Retained] =
+        CALCULATE(
+            [DaxBi Subscribers],
+            KEEPFILTERS('subscriptions_churn_clean'[ألغى الاشتراك] = 0)
+        )
+
+    MEASURE 'subscriptions_churn_clean'[DaxBi Churn Rate] =
+        DIVIDE([DaxBi Churned], [DaxBi Subscribers])
+
+    MEASURE 'subscriptions_churn_clean'[DaxBi Retention Rate] =
+        DIVIDE([DaxBi Retained], [DaxBi Subscribers])
+
+    MEASURE 'subscriptions_churn_clean'[DaxBi Average Support Tickets] =
+        AVERAGE('subscriptions_churn_clean'[تذاكر الدعم])
+
+    MEASURE 'subscriptions_churn_clean'[DaxBi Average Monthly Sessions] =
+        AVERAGE('subscriptions_churn_clean'[متوسط الجلسات الشهرية])
+
+    // Remove only the plan column filter; preserve billing, payment and other filters.
+    MEASURE 'subscriptions_churn_clean'[DaxBi Plan Baseline Churn Rate] =
+        CALCULATE(
+            [DaxBi Churn Rate],
+            REMOVEFILTERS('subscriptions_churn_clean'[الباقة])
+        )
+
+    // Percentage points: 11.79% minus 9.29% is approximately +2.50 pp.
+    MEASURE 'subscriptions_churn_clean'[DaxBi Plan Gap pp] =
+        VAR SegmentRate = [DaxBi Churn Rate]
+        VAR BaselineRate = [DaxBi Plan Baseline Churn Rate]
+        RETURN
+            IF(
+                NOT ISBLANK(SegmentRate) && NOT ISBLANK(BaselineRate),
+                100 * (SegmentRate - BaselineRate)
+            )
+
+// Result 1: overall KPIs. Query view does not inherit report-page slicers.
+EVALUATE
+    ROW(
+        "Subscribers", [DaxBi Subscribers],
+        "Churned", [DaxBi Churned],
+        "Retained", [DaxBi Retained],
+        "Churn rate", [DaxBi Churn Rate],
+        "Retention rate", [DaxBi Retention Rate],
+        "Average support tickets", [DaxBi Average Support Tickets],
+        "Average monthly sessions", [DaxBi Average Monthly Sessions]
+    )
+
+// Result 2: compare rates together with the number of subscribers in each plan.
+EVALUATE
+    SUMMARIZECOLUMNS(
+        'subscriptions_churn_clean'[الباقة],
+        "Subscribers", [DaxBi Subscribers],
+        "Churned", [DaxBi Churned],
+        "Churn rate", [DaxBi Churn Rate],
+        "Plan baseline", [DaxBi Plan Baseline Churn Rate],
+        "Gap pp", [DaxBi Plan Gap pp]
+    )
+ORDER BY [Churn rate] DESC
+
+// Result 3: the monthly-billing segment, with an explicit query filter.
+EVALUATE
+    CALCULATETABLE(
+        SUMMARIZECOLUMNS(
+            'subscriptions_churn_clean'[الباقة],
+            "Subscribers", [DaxBi Subscribers],
+            "Churn rate", [DaxBi Churn Rate],
+            "Monthly plan baseline", [DaxBi Plan Baseline Churn Rate],
+            "Gap pp", [DaxBi Plan Gap pp]
+        ),
+        TREATAS({"شهري"}, 'subscriptions_churn_clean'[دورة الفوترة])
+    )
+ORDER BY [Churn rate] DESC
+
+// Result 4: baseline and edge-case assertions. Every Pass should be TRUE
+// on the original unrestricted model. 1/0 represents a boolean assertion.
+EVALUATE
+    VAR Checks =
+        UNION(
+            ROW("Check", "01 Total subscribers", "Expected", 2400, "Actual", [DaxBi Subscribers]),
+            ROW("Check", "02 Churned subscribers", "Expected", 223, "Actual", [DaxBi Churned]),
+            ROW("Check", "03 Retained subscribers", "Expected", 2177, "Actual", [DaxBi Retained]),
+            ROW("Check", "04 Overall churn rate", "Expected", 223 / 2400, "Actual", [DaxBi Churn Rate]),
+            ROW("Check", "05 Overall retention rate", "Expected", 2177 / 2400, "Actual", [DaxBi Retention Rate]),
+            ROW("Check", "06 Counts reconcile", "Expected", 0, "Actual", [DaxBi Subscribers] - [DaxBi Churned] - [DaxBi Retained]),
+            ROW("Check", "07 Basic-plan subscribers", "Expected", 738,
+                "Actual", CALCULATE([DaxBi Subscribers], 'subscriptions_churn_clean'[الباقة] = "أساسي")),
+            ROW("Check", "08 Basic-plan churned", "Expected", 87,
+                "Actual", CALCULATE([DaxBi Churned], 'subscriptions_churn_clean'[الباقة] = "أساسي")),
+            ROW("Check", "09 Basic-plan churn rate", "Expected", 87 / 738,
+                "Actual", CALCULATE([DaxBi Churn Rate], 'subscriptions_churn_clean'[الباقة] = "أساسي")),
+            ROW("Check", "10 Annual-billing subscribers", "Expected", 907,
+                "Actual", CALCULATE([DaxBi Subscribers], 'subscriptions_churn_clean'[دورة الفوترة] = "سنوي")),
+            ROW("Check", "11 Annual-billing churned", "Expected", 67,
+                "Actual", CALCULATE([DaxBi Churned], 'subscriptions_churn_clean'[دورة الفوترة] = "سنوي")),
+            ROW("Check", "12 Attendee churn rate", "Expected", 98 / 1314,
+                "Actual", CALCULATE([DaxBi Churn Rate], 'subscriptions_churn_clean'[حضر التهيئة] = 1)),
+            ROW("Check", "13 Plan baseline removes plan filter", "Expected", 223 / 2400,
+                "Actual", CALCULATE([DaxBi Plan Baseline Churn Rate], 'subscriptions_churn_clean'[الباقة] = "أساسي")),
+            ROW("Check", "14 Plan baseline preserves monthly billing", "Expected", 156 / 1493,
+                "Actual", CALCULATE([DaxBi Plan Baseline Churn Rate],
+                    'subscriptions_churn_clean'[الباقة] = "أساسي",
+                    'subscriptions_churn_clean'[دورة الفوترة] = "شهري")),
+            ROW("Check", "15 Basic-plan gap in percentage points", "Expected", 100 * (87 / 738 - 223 / 2400),
+                "Actual", CALCULATE([DaxBi Plan Gap pp], 'subscriptions_churn_clean'[الباقة] = "أساسي")),
+            ROW("Check", "16 Retained filter excludes churned", "Expected", 0,
+                "Actual", CALCULATE([DaxBi Churned], 'subscriptions_churn_clean'[ألغى الاشتراك] = 0)),
+            ROW("Check", "17 Churned filter excludes retained", "Expected", 0,
+                "Actual", CALCULATE([DaxBi Retained], 'subscriptions_churn_clean'[ألغى الاشتراك] = 1)),
+            ROW("Check", "18 Empty selection has zero subscribers", "Expected", 0,
+                "Actual", CALCULATE([DaxBi Subscribers], FILTER(ALL('subscriptions_churn_clean'), FALSE()))),
+            ROW("Check", "19 Empty selection has blank rate", "Expected", 1,
+                "Actual", IF(ISBLANK(CALCULATE([DaxBi Churn Rate], FILTER(ALL('subscriptions_churn_clean'), FALSE()))), 1, 0)),
+            ROW("Check", "20 Empty selection has blank gap", "Expected", 1,
+                "Actual", IF(ISBLANK(CALCULATE([DaxBi Plan Gap pp], FILTER(ALL('subscriptions_churn_clean'), FALSE()))), 1, 0))
+        )
+    RETURN
+        ADDCOLUMNS(
+            Checks,
+            "Pass", NOT ISBLANK([Actual]) && ABS([Actual] - [Expected]) < 0.000000001
+        )
+ORDER BY [Check]
