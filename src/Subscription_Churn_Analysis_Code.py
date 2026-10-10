@@ -40,7 +40,8 @@ def load_and_clean(path: Path) -> pd.DataFrame:
     """Validate the source schema, then parse dates and Arabic binary labels."""
     if not path.is_file():
         raise ValueError(f"Dataset not found: {path}. See data/README.md for the required file.")
-    df = pd.read_csv(path, encoding="utf-8-sig")
+    # Identifiers are labels: numeric inference would merge IDs such as 001 and 1.
+    df = pd.read_csv(path, encoding="utf-8-sig", dtype={"معرف المشترك": "string"})
     missing = sorted(set(REQUIRED) - set(df.columns))
     if missing:
         raise ValueError(f"Missing required columns: {missing}")

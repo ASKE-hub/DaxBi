@@ -3,6 +3,7 @@
 Run: python -m unittest discover -s tests -v
 """
 
+import csv
 from pathlib import Path
 import sys
 import tempfile
@@ -60,6 +61,36 @@ class DataContractTests(unittest.TestCase):
     def test_rejects_missing_column(self):
         with self.assertRaisesRegex(ValueError, "Missing required columns"):
             self.load(fixture().drop(columns=[analysis.TARGET]))
+
+    def test_preserves_numeric_like_identifiers_through_power_bi_export(self):
+        cases = {
+            "leading zeros": ["001", "1", "002", "2", "003", "3", "004", "4"],
+            "scientific notation": ["1e3", "1000", "2e3", "2000", "3e3", "3000", "4e3", "4000"],
+            "large integers": [str(9007199254740993 + i) for i in range(8)],
+        }
+        for label, identifiers in cases.items():
+            with self.subTest(label=label):
+                data = fixture()
+                data["معرف المشترك"] = identifiers
+                data.to_csv(self.path, index=False, encoding="utf-8-sig")
+                before = self.path.read_bytes()
+                clean = analysis.load_and_clean(self.path)
+                self.assertEqual(clean["معرف المشترك"].tolist(), identifiers)
+                output = Path(self.tmp.name) / "processed.csv"
+                analysis.export_power_bi(clean, output)
+                # Read lexical CSV values without pandas type inference masking a bug.
+                with output.open(encoding="utf-8-sig", newline="") as stream:
+                    exported_ids = [row["معرف المشترك"] for row in csv.DictReader(stream)]
+                self.assertEqual(exported_ids, identifiers)
+                self.assertEqual(self.path.read_bytes(), before)
+
+    def test_text_identifiers_still_reject_empty_or_blank_values(self):
+        for value in (None, "", "   "):
+            with self.subTest(value=value):
+                data = fixture()
+                data.loc[0, "معرف المشترك"] = value
+                with self.assertRaisesRegex(ValueError, "missing required values|Blank values"):
+                    self.load(data)
 
     def test_rejects_unrecognized_target_instead_of_silently_mapping_to_null(self):
         data = fixture()

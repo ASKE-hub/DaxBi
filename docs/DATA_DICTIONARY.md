@@ -17,6 +17,12 @@ The input has one row per subscriber. Column names remain in Arabic to match the
 | حضر التهيئة | Attended onboarding | نعم / لا, mapped to 1 / 0 | Binary feature |
 | ألغى الاشتراك | Churn status | نعم / لا, mapped to 1 / 0 | Target |
 
+## Subscriber identifier handling
+
+The Python script explicitly loads `معرف المشترك` as text. Values such as `001` and `1`, or `1e3` and `1000`, remain distinct identifiers; long numeric-looking IDs also remain strings. Their text is preserved in the exported CSV. Empty IDs, whitespace-only IDs, and duplicate IDs are rejected. Default pandas missing-value markers such as `NULL` still count as missing values.
+
+CSV files do not carry column types. When importing the export into Power BI, keep this column as **Text**, including in the query's first type-conversion step. Converting it to a number can remove leading zeros before a later conversion back to text. See the [refresh guide](POWER_BI.md).
+
 ## Derived Power BI fields
 
 | Column | Derivation |

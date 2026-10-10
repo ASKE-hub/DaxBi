@@ -40,6 +40,12 @@ The repository now includes nine query-scoped DAX measures, segment comparisons,
 
 Local verification on 2026-10-09: all seven Python tests passed; 10 segment rows reconciled; 27 local links resolved; and nine DAX measure definitions referenced known fields. The checker also rejected a deliberately inconsistent churn rate and a broken link in temporary test copies. The workflow YAML parsed successfully. Native DAX execution remains pending.
 
+## Identifier-preservation fix — 2026-10-10
+
+Numeric-looking subscriber IDs are now read as text in the Python importer and the notebook preview. Regression cases demonstrate that leading-zero IDs (`001` versus `1`) and scientific-notation IDs (`1e3` versus `1000`) remain distinct, and large numeric-looking IDs remain strings through the cleaned CSV export. The tests also confirm that the original source file is unchanged and empty or whitespace-only identifiers are still rejected.
+
+Before the fix, the new preservation test failed for all three identifier formats. After the fix, all nine Python tests passed, along with the aggregate, documentation-link, and DAX-reference checks. The notebook's CSV-reading statement was checked separately with synthetic identifiers; this is not a fresh execution of the full analytical notebook or a Power BI refresh.
+
 ## Scope
 
 The Power BI archive was inspected, but the report was not opened or refreshed in Power BI Desktop here. No automated test establishes the correctness of every dashboard calculation or interaction. The PDF and PBIX were preserved unchanged. The project reports observed associations and a held-out classification baseline; it does not claim production readiness or measured business impact.

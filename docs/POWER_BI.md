@@ -14,7 +14,7 @@ Open [SubscriptionChurn.pbix](../powerbi/SubscriptionChurn.pbix) with Power BI D
 1. Run the Python analysis to generate `data/processed/subscriptions_churn_clean.csv`.
 2. Open the PBIX in Power BI Desktop and inspect the existing `subscriptions_churn_clean` query.
 3. Update its file-source path to your generated CSV. The original source points to the author's local computer, so it may need to be changed before refresh.
-4. Retain the Arabic column names and existing transformations; confirm the source uses UTF-8 and the promoted headers match the data dictionary.
+4. Retain the Arabic column names and existing transformations; confirm the source uses UTF-8 and the promoted headers match the data dictionary. Keep `معرف المشترك` as **Text** from the first type-conversion step so numeric-looking identifiers retain their exact spelling. If an automatic step already converted it to a number, edit that step and reload from the CSV; changing the type back afterward cannot recover lost zeros.
 5. Apply the change and refresh the report.
 6. With all slicers cleared, verify **2,400 total**, **2,177 retained**, **223 churned**, and **9.29% churn** against the supplied dataset.
 
